@@ -1,6 +1,6 @@
 # HC-12-Toolbox
 
-A very small helper to set up a (https://amzn.to/4teBKLF)[HC-12 RC module] using an ESP32.
+A very small helper to set up a (HC-12 RC module)[https://amzn.to/4teBKLF] using an ESP32.
 
 ## Usage
 
