@@ -20,12 +20,12 @@ A very small helper to set up a (https://amzn.to/4teBKLF)[HC-12 RC module] using
 
 4. Follow the prompts in the Serial Monitor to configure your HC-12 module.
 
-## Ideas
+<!-- ## Ideas
 
 To configure the HC-12 module in different soldering states, you can connect the board to contacts with multiple configurations.
 
 This might look like the example board shown here:
-![ESP32 HC-12 Example Board](images/HC-12-Board.jpg)
+![ESP32 HC-12 Example Board](images/HC-12-Board.jpg) -->
 
 ## To dos:
 
