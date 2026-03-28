@@ -32,9 +32,11 @@ This might look like the example board shown here:
 - [ ] Add more configuration options (e.g., baud rate)
 - [ ] Add a web interface for easier configuration
 - [ ] Add support for mini Oled displays to show the current configuration
+- [ ] Add menu buttons to navigate through the configuration options via Oled display without needing a serial monitor
 
 Feel free to fork this project and add your own configurations or features! I would love to see what you come up with.
 
 ## Thanks
 
-Much of the knowledge for this project was taken from [Wolles Elektronikkiste - Die wunderbare Welt der Elektronik](https://wolles-elektronikkiste.de/hc-12-funkmodul/), which is a great resource for learning about the HC-12 module. Thank you for sharing your knowledge and code!
+Much of the knowledge for this project was taken from [Wolles Elektronikkiste - Die wunderbare Welt der Elektronik](https://wolles-elektronikkiste.de/hc-12-funkmodul/), which is a great resource for learning about the HC-12 module. Thank you Wolfgang for sharing your knowledge and code!
+
