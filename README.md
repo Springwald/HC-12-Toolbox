@@ -1,6 +1,6 @@
 # HC-12-Toolbox
 
-A small helper to set up a (https://amzn.to/4teBKLF)[HC-12 RC module] using a ESP32.
+A very small helper to set up a (https://amzn.to/4teBKLF)[HC-12 RC module] using an ESP32.
 
 ## Usage
 
@@ -20,8 +20,21 @@ A small helper to set up a (https://amzn.to/4teBKLF)[HC-12 RC module] using a ES
 
 4. Follow the prompts in the Serial Monitor to configure your HC-12 module.
 
+## Ideas
+
+To configure the HC-12 module in different soldering states, you can connect the board to contacts with multiple configurations.
+
+This might look like the example board shown here:
+![ESP32 HC-12 Example Board](images/HC-12-Board.jpg)
+
+## To dos:
+
+- [ ] Add more configuration options (e.g., baud rate)
+- [ ] Add a web interface for easier configuration
+- [ ] Add support for mini Oled displays to show the current configuration
+
+Feel free to fork this project and add your own configurations or features! I would love to see what you come up with.
+
 ## Thanks
 
 Much of the knowledge for this project was taken from [Wolles Elektronikkiste - Die wunderbare Welt der Elektronik](https://wolles-elektronikkiste.de/hc-12-funkmodul/), which is a great resource for learning about the HC-12 module. Thank you for sharing your knowledge and code!
-
- 
