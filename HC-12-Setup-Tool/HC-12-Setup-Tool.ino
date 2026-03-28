@@ -52,7 +52,7 @@ void loop()
   }
 
   // read commands from the PC and execute them
-  counter=0;
+  counter = 0;
   if (serialToPc.available() && counter++ < 100)
   {
     delay(300); // wait for the user to finish typing the command
@@ -89,6 +89,7 @@ void processCommand(String command)
   {
     clearSerialToPc(); // clear the terminal to make it easier to read the output
     showStatus();
+    serialToPc.println();
     showHelp();
     return;
   }
@@ -216,7 +217,7 @@ String getAtCommandResult(String command, bool needsOk)
   setHc12SetMode(false);
   delay(100);
   int counter = 0;
-  while (serialToHc12.available()&& counter++ < 100)
+  while (serialToHc12.available() && counter++ < 100)
   {
     char value = serialToHc12.read();
     result = result + value;
