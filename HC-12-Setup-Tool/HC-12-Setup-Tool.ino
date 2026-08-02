@@ -129,6 +129,16 @@ void processCommand(String command)
     return;
   }
 
+  if (command.startsWith("m-") || command.startsWith("M-"))
+  {
+    int mode = command.substring(2).toInt();
+    if (setMode(mode))
+      showResult("FU mode set to " + String(mode));
+    else
+      showResult("Failed to set FU mode to " + String(mode));
+    return;
+  }
+
   if (command.equalsIgnoreCase("s"))
   {
     clearSerialToPc(); // clear the terminal to make it easier to read the output
@@ -224,7 +234,7 @@ bool setMode(int mode)
   }
 
   // the AT command to set the mode is "AT+Fx" where x is the mode, for example "AT+F1" for mode 1, "AT+F2" for mode 2 etc..
-  auto command = "AT+F" + String(mode, DEC);
+  auto command = "AT+FU" + String(mode, DEC);
   auto result = getAtCommandResult(command, true, false);
 
   return result != errorResult;
