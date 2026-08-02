@@ -15,13 +15,18 @@
 auto serialToPc = Serial;
 SoftwareSerial serialToHc12(RxPin, TxPin);
 
+int baudrateToHc12 = 9600;
+
 const char *errorResult = "ERROR";
 
 void setup()
 {
   // start the serial ports
   serialToPc.begin(115200);
-  serialToHc12.begin(9600);
+
+  findOutBaudrateToHc12();
+  serialToHc12.begin(baudrateToHc12);
+
   delay(1000); // wait for the serial ports to initialize
 
   serialToPc.println("Starting HC-12 setup tool...");
@@ -62,6 +67,28 @@ void loop()
   }
 }
 
+void findOutBaudrateToHc12()
+{
+  int baudrates[] = {1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
+  for (auto baudrate : baudrates)
+  {
+    if (serialToHc12.isListening())
+      serialToHc12.end();
+
+    serialToHc12.begin(baudrate);
+    delay(100);
+    auto result = getAtCommandResult("AT+V", true, true);
+    if (result != errorResult)
+    {
+      baudrateToHc12 = baudrate;
+      serialToPc.println("Found HC-12 baudrate: " + String(baudrate));
+      return;
+    }
+    if (serialToHc12.isListening())
+      serialToHc12.end();
+  }
+}
+
 void processCommand(String command)
 {
   command.trim(); // remove any leading or trailing whitespace
@@ -70,8 +97,8 @@ void processCommand(String command)
     int channel = command.substring(2).toInt();
     if (setChannel(channel))
       showResult("Channel set to " + String(channel));
-    else
-      showResult("Failed to set channel to " + String(channel));
+    else 
+        showResult("Failed to set channel to " + String(channel));
     return;
   }
 
@@ -81,7 +108,7 @@ void processCommand(String command)
     if (setPower(power))
       showResult("Power level set to " + String(power));
     else
-      showResult("Failed to set power level to " + String(power));
+        showResult("Failed to set power level to " + String(power));
     return;
   }
 
@@ -126,11 +153,11 @@ void showHelp()
 void showStatus()
 {
   serialToPc.println("Current HC-12 status:");
-  serialToPc.println("    Firmware: " + getAtCommandResult("AT+V", false));
-  serialToPc.print("    Channel: " + getAtCommandResult("AT+RC", true));
-  serialToPc.print(" / Baud Rate: " + getAtCommandResult("AT+RB", true));
-  serialToPc.print(" / Mode: " + getAtCommandResult("AT+RF", true));
-  serialToPc.println(" / Power: " + getAtCommandResult("AT+RP", true));
+  serialToPc.println("    Firmware: " + getAtCommandResult("AT+V", false, false));
+  serialToPc.print("    Channel: " + getAtCommandResult("AT+RC", true, false));
+  serialToPc.print(" / Baud Rate: " + getAtCommandResult("AT+RB", true, false));
+  serialToPc.print(" / Mode: " + getAtCommandResult("AT+RF", true, false));
+  serialToPc.println(" / Power: " + getAtCommandResult("AT+RP", true, false));
   delay(100);
 }
 
@@ -182,7 +209,7 @@ bool setChannel(int channel)
   while (param.length() < 3)
     param = "0" + param;
   auto command = "AT+C" + param;
-  auto result = getAtCommandResult(command, true);
+  auto result = getAtCommandResult(command, true, false);
 
   return result != errorResult;
 }
@@ -200,7 +227,7 @@ bool setPower(int power)
 
   // the AT command to set the power level is "AT+Px" where x is the power level, for example "AT-P1" for power level 1, "AT-P2" for power level 2 etc..
   auto command = "AT+P" + String(power, DEC);
-  auto result = getAtCommandResult(command, true);
+  auto result = getAtCommandResult(command, true, false);
 
   return result != errorResult;
 }
@@ -208,7 +235,7 @@ bool setPower(int power)
 /// @brief Send an AT command to the HC-12 module and get the result
 /// @param command The AT command to send
 /// @return The result of the AT command, when the command is executed successfully, otherwise the result is "ERROR"
-String getAtCommandResult(String command, bool needsOk)
+String getAtCommandResult(String command, bool needsOk, bool silent)
 {
   String result = "";
   setHc12SetMode(true);
@@ -227,7 +254,8 @@ String getAtCommandResult(String command, bool needsOk)
   {
     if (result.length() == 0 || !result.startsWith("OK+"))
     {
-      serialToPc.println("(Failed to execute command: " + command + ". Result: " + result + ")");
+      if (silent == false)
+        serialToPc.println("(Failed to execute command: " + command + ". Result: " + result + ")");
       return errorResult;
     }
 
