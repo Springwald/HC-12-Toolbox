@@ -16,6 +16,7 @@ auto serialToPc = Serial;
 SoftwareSerial serialToHc12(RxPin, TxPin);
 
 int baudrateToHc12 = 9600;
+int baudrates[] = {9600, 1200, 2400, 4800, 19200, 38400, 57600, 115200};
 
 const char *errorResult = "ERROR";
 
@@ -23,11 +24,11 @@ void setup()
 {
   // start the serial ports
   serialToPc.begin(115200);
+  delay(500);
 
   findOutBaudrateToHc12();
   serialToHc12.begin(baudrateToHc12);
-
-  delay(1000); // wait for the serial ports to initialize
+  delay(500); // wait for the HC12
 
   serialToPc.println("Starting HC-12 setup tool...");
 
@@ -69,23 +70,29 @@ void loop()
 
 void findOutBaudrateToHc12()
 {
-  int baudrates[] = {1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200};
-  for (auto baudrate : baudrates)
+  for (int trys = 0; trys < 2; trys++)
   {
-    if (serialToHc12.isListening())
-      serialToHc12.end();
-
-    serialToHc12.begin(baudrate);
-    delay(100);
-    auto result = getAtCommandResult("AT+V", true, true);
-    if (result != errorResult)
+    serialToPc.print("Finding out the baudrate of the HC-12...");
+    for (int baudrate : baudrates)
     {
-      baudrateToHc12 = baudrate;
-      serialToPc.println("Found HC-12 baudrate: " + String(baudrate));
-      return;
-    }
-    if (serialToHc12.isListening())
+      serialToPc.print(".");
       serialToHc12.end();
+      delay(100);
+      serialToHc12.begin(baudrate);
+      serialToHc12.flush();
+      delay(100);
+      String result = getAtCommandResult("AT+RC", true, false);
+      serialToHc12.flush();
+      serialToHc12.end();
+      serialToPc.println();
+
+      if (result != errorResult)
+      {
+        baudrateToHc12 = baudrate;
+        serialToPc.println(" Found HC-12 baudrate: " + String(baudrate));
+        return;
+      }
+    }
   }
 }
 
@@ -97,8 +104,8 @@ void processCommand(String command)
     int channel = command.substring(2).toInt();
     if (setChannel(channel))
       showResult("Channel set to " + String(channel));
-    else 
-        showResult("Failed to set channel to " + String(channel));
+    else
+      showResult("Failed to set channel to " + String(channel));
     return;
   }
 
@@ -108,7 +115,17 @@ void processCommand(String command)
     if (setPower(power))
       showResult("Power level set to " + String(power));
     else
-        showResult("Failed to set power level to " + String(power));
+      showResult("Failed to set power level to " + String(power));
+    return;
+  }
+
+  if (command.startsWith("b-") || command.startsWith("B-"))
+  {
+    int baudrate = command.substring(2).toInt();
+    if (setBaud(baudrate))
+      showResult("Baud rate set to " + String(baudrate));
+    else
+      showResult("Failed to set baud rate to " + String(baudrate));
     return;
   }
 
@@ -147,6 +164,8 @@ void showHelp()
   serialToPc.println("    S         - show the firmware version and status of the HC-12");
   serialToPc.println("    C-<1-100> - set channel, e.g. C-1 (in germany the allowed channels are 1-4)");
   serialToPc.println("    P-<1-8>   - set power level, e.g. P-1 ");
+  serialToPc.println("    B-<baudrate> - set baud rate, e.g. B-9600");
+  serialToPc.println("    M-<1-4>   - set FU mode, e.g. M-1");
   delay(100);
 }
 
@@ -193,6 +212,24 @@ void setHc12SetMode(bool on)
   delay(50);
 }
 
+/// @brief Set the FU mode of the HC-12 module
+/// @param mode The FU mode to set (1-4)
+/// @return true if the FU mode was set successfully, false otherwise
+bool setMode(int mode)
+{
+  if (mode < 1 || mode > 4)
+  {
+    serialToPc.println("Bad request. Allowed modes: 1-4");
+    return false;
+  }
+
+  // the AT command to set the mode is "AT+Fx" where x is the mode, for example "AT+F1" for mode 1, "AT+F2" for mode 2 etc..
+  auto command = "AT+F" + String(mode, DEC);
+  auto result = getAtCommandResult(command, true, false);
+
+  return result != errorResult;
+}
+
 /// @brief Set the channel of the HC-12 module
 /// @param channel The channel to set (1-100)
 /// @return true if the channel was set successfully, false otherwise
@@ -210,6 +247,37 @@ bool setChannel(int channel)
     param = "0" + param;
   auto command = "AT+C" + param;
   auto result = getAtCommandResult(command, true, false);
+
+  return result != errorResult;
+}
+
+/// @brief Set the baud rate of the HC-12 module
+/// @param baudrate The baud rate to set (1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200)
+/// @return true if the baud rate was set successfully, false otherwise
+bool setBaud(int baudrate)
+{
+  bool baudrateAllowed = false;
+  for (int baud : baudrates)
+  {
+    if (baud == baudrate)
+    {
+      baudrateAllowed = true;
+      break;
+    }
+  }
+  if (!baudrateAllowed)
+  {
+    serialToPc.println("Bad request. Allowed baud rates: 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200");
+    return false;
+  }
+
+  // the AT command to set the baud rate is "AT+Bx" where x is the baud rate, for example "AT+B1200" for 1200 baud, "AT+B2400" for 2400 baud etc..
+  auto command = "AT+B" + String(baudrate, DEC);
+  auto result = getAtCommandResult(command, true, false);
+
+  serialToHc12.end();                 // close the serial port to the HC-12, otherwise it will not be able to change the baud rate
+  findOutBaudrateToHc12();            // update the baudrateToHc12 variable to the new baud rate
+  serialToHc12.begin(baudrateToHc12); // reinitialize the serial port to the new baud rate
 
   return result != errorResult;
 }
@@ -254,7 +322,7 @@ String getAtCommandResult(String command, bool needsOk, bool silent)
   {
     if (result.length() == 0 || !result.startsWith("OK+"))
     {
-      if (silent == false)
+      if (silent != true)
         serialToPc.println("(Failed to execute command: " + command + ". Result: " + result + ")");
       return errorResult;
     }
